@@ -234,3 +234,4 @@ env/
 data
 data/*.wav
 data/.mov
+output/

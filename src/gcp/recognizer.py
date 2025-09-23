@@ -5,7 +5,7 @@ from google.cloud.speech_v2.types import cloud_speech
 
 import uuid
 
-from Config.config import initialize_gcs_client
+from config.GCP import initialize_gcs_client
 from dotenv import load_dotenv
 load_dotenv()
 
