@@ -1,50 +1,23 @@
-from Config.GCP import load_credentials_base64
+from config.GCP import initialize_gcs_client
 from dotenv import load_dotenv
 load_dotenv()
-load_credentials_base64()
-
-
 from google.cloud import storage
 import json
-from google.cloud.speech_v2 import SpeechClient
-from google.cloud.speech_v2.types import cloud_speech
 from google.cloud import speech_v2
+from google.cloud.speech_v2.types import cloud_speech
+from utils.const import OUTPUT_LANGS, SPEECH_TO_TEXT_MODEL
 
-PROJECT_ID = "cbm-cgs-uiim-prd"
-
-from pydub import AudioSegment
-
-def convert_mov_to_wav_specific(input_file: str, output_file: str) -> str:
+def batch_recognize_gcs(project_id, location, recognizer_id, audio_uri, gcs_output_uri) -> cloud_speech.BatchRecognizeResponse | None:
     """
-    Converts a .mov file to a .wav file with specific audio settings:
-    - Codec: pcm_s16le (16-bit PCM)
-    - Sampling rate: 16000 Hz
-    - Channels: 1 (mono)
-
+    Transcribes audio from multiple Google Cloud Storage URIs using the Google Cloud Speech-to-Text API.
+    The transcription results are stored in another Google Cloud Storage bucket.
     Args:
-        input_file (str): Path to the input .mov file.
-        output_file (str): Path to save the output .wav file.
-
+        audio_uri (str): Google Cloud Storage URIs of the input audio files.
+            E.g., ["gs://[BUCKET]/[FILE]", "gs://[BUCKET]/[FILE]"]
+        gcs_output_uri (str): The Google Cloud Storage bucket URI where the output transcript will be stored.
+            E.g., gs://[BUCKET]
     Returns:
-        str: Path to the converted .wav file.
-    """
-    # Load the audio from the input file
-    audio = AudioSegment.from_file(input_file, format="mov")
-
-    audio = audio.set_channels(1)
-    
-    audio = audio.set_frame_rate(16000)
-    
-    audio = audio.set_sample_width(2)
-
-    # Export the audio to the output file in wav format
-    audio.export(output_file, format="wav")
-
-    return output_file
-
-def batch_recognize_gcs(project_id, location, recognizer_id, gcs_uri, gcs_output_uri):
-    """
-    Performs batch speech recognition and saves the final transcript as a .txt file.
+        cloud_speech.BatchRecognizeResponse: The response containing the URIs of the transcription results.
     """
 
     client = speech_v2.SpeechClient()
@@ -53,10 +26,10 @@ def batch_recognize_gcs(project_id, location, recognizer_id, gcs_uri, gcs_output
     # --- ส่วนของการตั้งค่าและส่ง Request (เหมือนเดิม) ---
     config = speech_v2.RecognitionConfig(
         auto_decoding_config=speech_v2.AutoDetectDecodingConfig(),
-        language_codes=["th-TH"],
-        model="long",
+        language_codes=OUTPUT_LANGS,
+        model=SPEECH_TO_TEXT_MODEL,
     )
-    file_metadata = speech_v2.BatchRecognizeFileMetadata(uri=gcs_uri)
+    file_metadata = speech_v2.BatchRecognizeFileMetadata(uri=audio_uri)
     output_config = speech_v2.GcsOutputConfig(uri=gcs_output_uri)
     recognition_output_config = speech_v2.RecognitionOutputConfig(gcs_output_config=output_config)
     request = speech_v2.BatchRecognizeRequest(
@@ -73,7 +46,7 @@ def batch_recognize_gcs(project_id, location, recognizer_id, gcs_uri, gcs_output
     print("Operation completed.")
     
 
-    result_metadata = response.results[gcs_uri]
+    result_metadata = response.results[audio_uri]
 
     if result_metadata.error and result_metadata.error.code != 0:
         print("❌ Transcription failed. Full error details below:")
@@ -106,17 +79,9 @@ def batch_recognize_gcs(project_id, location, recognizer_id, gcs_uri, gcs_output
             f.write(final_text)
             
         print(f"✅ Successfully extracted and saved transcript to '{output_txt_filename}'")
+        
+        return response
 
     except Exception as e:
         print(f"An error occurred while processing the result file: {e}")
-
-
-if __name__ == "__main__":
-    gcs_uri = "gs://cbm-cgs-acb-km-assets/km-video/standard_output.wav"
-    gcs_output_path = "gs://cbm-cgs-acb-km-assets/km-video/results/"
-
-    project_id = "cbm-cgs-uiim-prd"
-    location = "global"
-    recognizer_id = "_"
-    
-    batch_recognize_gcs(project_id, location, recognizer_id, gcs_uri, gcs_output_path)
+        return None

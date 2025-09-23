@@ -1,7 +1,15 @@
 import os
-import json
-import base64
+from google.cloud import storage
 from google.oauth2 import service_account
+import json
+from dotenv import load_dotenv
+from datetime import timedelta
+import base64
+
+load_dotenv()
+
+# --- Global variable สำหรับเก็บ GCS Client ---
+_gcs_client = None
 
 def load_credentials_base64():
     ### base 64 encode
@@ -19,6 +27,12 @@ def load_credentials_base64():
             print("Error decoding Base64 or parsing JSON:", e)
     else:
         print("Error: Environment variable not set.")
+    ###
+
+    # service_account_info_str = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") 
+    # print(service_account_info_str)
+    # if not service_account_info_str:
+    #     raise ValueError("GOOGLE_APPLICATION_CREDENTIALS environment variable not set or is empty.")
     try:
     #     service_account_json = json.loads(service_account_info_str)
         credentials = service_account.Credentials.from_service_account_info(service_account_json)
@@ -35,3 +49,16 @@ def load_credentials_base64():
     #     raise ValueError(f"Error decoding JSON from GOOGLE_APPLICATION_CREDENTIALS: {e}")
     except Exception as e:
         raise RuntimeError(f"Error creating credentials from service account info: {e}")
+
+def initialize_gcs_client():
+    global _gcs_client
+    if _gcs_client is None:
+        credentials = load_credentials_base64()
+        _gcs_client = storage.Client(credentials=credentials)
+        print("\nGoogle Cloud Platform client initialized.\n")
+    return _gcs_client
+
+
+# 🏁
+# -------- use "initialize_gcs_client()"" to initialize the GCS client --------
+# ✨
