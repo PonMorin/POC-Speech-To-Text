@@ -68,3 +68,5 @@ python-pptx
 
 google-cloud-speech
 langchain-google-community[speech]
+pydub
+ffmpeg
