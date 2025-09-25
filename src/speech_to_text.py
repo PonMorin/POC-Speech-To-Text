@@ -1,4 +1,3 @@
-from config.GCP import initialize_gcs_client
 from dotenv import load_dotenv
 load_dotenv()
 from google.cloud import storage
@@ -74,7 +73,7 @@ def batch_recognize_gcs(project_id, location, recognizer_id, audio_uri, gcs_outp
         
         final_text = "\n".join(full_transcript)
         
-        output_txt_filename = "transcript_output.txt"
+        output_txt_filename = "transcript_output.md"
         with open(output_txt_filename, "w", encoding="utf-8") as f:
             f.write(final_text)
             

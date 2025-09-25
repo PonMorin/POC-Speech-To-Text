@@ -1,4 +1,4 @@
-from config.GCP import initialize_gcs_client
+from config.gcp import initialize_gcs_client
 from src.speech_to_text import batch_recognize_gcs
 
 if __name__ == "__main__":

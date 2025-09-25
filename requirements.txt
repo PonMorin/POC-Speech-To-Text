@@ -71,3 +71,5 @@ langchain-google-community[speech]
 pydub
 ffmpeg
 google-cloud-storage
+
+rouge-score
