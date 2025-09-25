@@ -1,4 +1,5 @@
 import time
+import asyncio
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -15,7 +16,7 @@ from langchain_google_vertexai import ChatVertexAI
 from utils.splitter import text_splitter
 from utils.const import CHUNK_SIZE, CHUNK_OVERLAP
 
-def batch_recognize_gcs(state: GraphState) -> GraphState:
+async def batch_recognize_gcs(state: GraphState) -> GraphState:
     """
     Transcribes audio from a GCS URI and updates the state with the raw text.
     """
@@ -45,11 +46,16 @@ def batch_recognize_gcs(state: GraphState) -> GraphState:
         recognition_output_config=recognition_output_config,
     )
 
-    print("Sending transcription request...")
     operation = client.batch_recognize(request=request)
-    print("Waiting for operation to complete...")
+    print("Batch transcription started. Polling for completion...")
+
+    while not operation.done():
+        print("⏱️ Still processing... waiting 60s before next check...")
+        await asyncio.sleep(60)  # check every 60 seconds
+
     response = operation.result()
-    print("Operation completed.")
+    print("\033[93m✅ Transcription complete!\033[00m")
+
     
     result_metadata = response.results[state["audio_uri"]]
 
@@ -79,7 +85,7 @@ def batch_recognize_gcs(state: GraphState) -> GraphState:
         
         final_text = "\n".join(full_transcript)
             
-        print(f"✅ Successfully extracted transcript.")
+        print(f"\033[93m✅ Successfully extracted transcript\033[00m")
         
         state["raw_text"] = final_text
         return state
@@ -151,6 +157,6 @@ def summarize_document(state: GraphState) -> GraphState:
     response = chain.invoke({"input_documents": docs})
     
     summary_text = response['output_text']
-    print("✅ Summarization complete.")
+    print("\033[93m✅ Summarization complete\033[00m")
     
     return {"result_summarize": summary_text}
