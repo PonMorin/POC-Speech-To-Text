@@ -1,5 +1,3 @@
-# flow.py (or your main script)
-
 from dotenv import load_dotenv
 from config.GCP import load_credentials_base64
 
@@ -11,17 +9,17 @@ from state import GraphState
 from node.rag_node import summarize_document
 from node.speech_to_text import batch_recognize_gcs
 
-# Create a graph
+
 workflow = StateGraph(GraphState)
 
-# Add Nodes to the flow
+
 workflow.add_node('SpeechToText', batch_recognize_gcs)
 workflow.add_node('SUMMARIZE', summarize_document)
 
 # Set the entry point and edges
 workflow.set_entry_point('SpeechToText')
 workflow.add_edge('SpeechToText', 'SUMMARIZE')
-workflow.add_edge('SUMMARIZE', END) # It's good practice to define the end
+workflow.add_edge('SUMMARIZE', END)
 
 # Compile the graph
 app = workflow.compile()
@@ -38,7 +36,7 @@ if __name__ == "__main__":
     }
     
     print("Invoking graph...")
-    # The invoke method runs the graph from the entry point to the end.
+    
     final_state = app.invoke(initial_state)
     
     print("\n--- Final Result ---")
