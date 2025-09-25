@@ -7,3 +7,4 @@ class GraphState(TypedDict):
     result_summarize: str
     audio_uri: str
     gcs_output_path: str
+    time_taken: float

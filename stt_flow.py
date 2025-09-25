@@ -30,7 +30,7 @@ if __name__ == "__main__":
     # app.get_graph().draw_mermaid_png(output_file_path="graph.png")
 
     initial_state = {
-        "audio_uri": "gs://cbm-cgs-acb-km-assets/km-video/standard_output.wav",
+        "audio_uri": "gs://cbm-cgs-acb-km-assets/km-video/อบรม Burner Design & Operation (TP Training_วชช.ผลิต)-20241028_083859-Meeting Recording.wav",
         "gcs_output_path": "gs://cbm-cgs-acb-km-assets/km-video/results/"
     }
     

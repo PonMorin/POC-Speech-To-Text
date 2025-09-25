@@ -1,3 +1,4 @@
+import time
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -18,7 +19,8 @@ def batch_recognize_gcs(state: GraphState) -> GraphState:
     """
     Transcribes audio from a GCS URI and updates the state with the raw text.
     """
-    print("\n--- Speech To Text ---")
+    print("\033[92m--- Speech To Text ---\033[00m")
+    state["time_taken"] = time.time()
     
     project_id = str(os.getenv("GOOGLE_CLOUD_PROJECT_ID"))
     recognizer_id = str(os.getenv("GOOGLE_CLOUD_RECOGNIZER_ID"))
@@ -79,7 +81,8 @@ def batch_recognize_gcs(state: GraphState) -> GraphState:
             
         print(f"✅ Successfully extracted transcript.")
         
-        return {"raw_text": final_text}
+        state["raw_text"] = final_text
+        return state
 
     except Exception as e:
         print(f"An error occurred while processing the result file: {e}")
@@ -89,7 +92,7 @@ def summarize_document(state: GraphState) -> GraphState:
     """
     Summarize the content of a document using the language model.
     """
-    print("\n--- Summarizing Text ---")
+    print("\033[92m--- Summarizing Text ---\033[00m")
     
     raw_text = state["raw_text"]
     if not raw_text:
