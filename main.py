@@ -1,6 +1,6 @@
 import os
 from config.GCP import initialize_gcs_client
-from src.speech_to_text import batch_recognize_gcs
+from node.speech_to_text import batch_recognize_gcs
 from dotenv import load_dotenv
 load_dotenv()
 from utils.const import LOCATION
