@@ -10,5 +10,5 @@ if __name__ == "__main__":
 
     project_id = "cbm-cgs-uiim-prd"
     location = "global"
-    recognizer_id = "_"
+    recognizer_id = "cimie-dev"
     batch_recognize_gcs(project_id, location, recognizer_id, audio_uri, gcs_output_path)
