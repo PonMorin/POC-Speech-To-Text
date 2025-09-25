@@ -1,5 +1,5 @@
 import os
-from config.GCP import load_credentials_base64
+from Config.gcp import load_credentials_base64
 from dotenv import load_dotenv
 load_dotenv()
 from rag.function import load_document, process_document, init_vector_store
