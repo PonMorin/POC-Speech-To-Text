@@ -6,7 +6,6 @@ import asyncio
 from dotenv import load_dotenv
 from config.GCP import initialize_gcs_client
 load_dotenv()
-initialize_gcs_client()
 
 async def main():
     workflow = StateGraph(GraphState)
@@ -27,7 +26,7 @@ async def main():
     # app.get_graph().draw_mermaid_png(output_file_path="graph.png")
 
     initial_state = {
-        "audio_uri": "gs://cbm-cgs-acb-km-assets/km-video/standard_output.wav",
+        "audio_uri": "gs://cbm-cgs-acb-km-assets/km-video/อบรม Burner Design & Operation (TP Training_วชช.ผลิต)-20241028_083859-Meeting Recording.wav",
         "gcs_output_path": "gs://cbm-cgs-acb-km-assets/km-video/results/"
     }
     
@@ -35,4 +34,5 @@ async def main():
 
 # --- Example of how to run the graph ---
 if __name__ == "__main__":
+    initialize_gcs_client()
     asyncio.run(main())

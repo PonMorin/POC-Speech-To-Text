@@ -237,3 +237,4 @@ data/.mov
 output/
 
 jae_test/
+experiment.py
