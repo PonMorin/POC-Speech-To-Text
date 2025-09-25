@@ -2,16 +2,13 @@ from langgraph.graph import START, END, StateGraph
 from state import GraphState
 from node.speech_to_text import batch_recognize_gcs, summarize_document
 from node.bucket import upload_doc_to_bucket
-
+import asyncio
 from dotenv import load_dotenv
 from config.GCP import initialize_gcs_client
 load_dotenv()
 initialize_gcs_client()
 
-
-# --- Example of how to run the graph ---
-if __name__ == "__main__":
-    
+async def main():
     workflow = StateGraph(GraphState)
     workflow.add_node('SPEECH TO TEXT', batch_recognize_gcs)
     workflow.add_node('SUMMARIZE', summarize_document)
@@ -30,8 +27,12 @@ if __name__ == "__main__":
     # app.get_graph().draw_mermaid_png(output_file_path="graph.png")
 
     initial_state = {
-        "audio_uri": "gs://cbm-cgs-acb-km-assets/km-video/อบรม Burner Design & Operation (TP Training_วชช.ผลิต)-20241028_083859-Meeting Recording.wav",
+        "audio_uri": "gs://cbm-cgs-acb-km-assets/km-video/standard_output.wav",
         "gcs_output_path": "gs://cbm-cgs-acb-km-assets/km-video/results/"
     }
     
-    final_state = app.invoke(initial_state)
+    await app.ainvoke(initial_state)
+
+# --- Example of how to run the graph ---
+if __name__ == "__main__":
+    asyncio.run(main())

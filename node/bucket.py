@@ -7,6 +7,9 @@ def upload_doc_to_bucket(state: GraphState) -> GraphState:
     """Upload doc to bucket"""
     print("\033[92m--- Uploading doc to bucket ---\033[00m")
     
+    with open("raw.md", "w") as f:
+        f.write(state["raw_text"])
+        
     with open("final.md", "w") as f:
         f.write(state["result_summarize"])
     
