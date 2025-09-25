@@ -14,7 +14,7 @@ def upload_doc_to_bucket(state: GraphState) -> GraphState:
     start_time = state.get("time_taken", None)
     if start_time:
         elapsed_time = time.time() - start_time
-        print(f"\n\033[96m ===========> ⏱️ Speech To Text operation time taken: {elapsed_time:.3f} seconds <===========\n\033[00m")
+        print(f"\n\033[96m ===========> ⏱️ Speech To Text operation time taken: {elapsed_time/60:.2f} minutes <===========\n\033[00m")
     else:
         print("\nStart time not found")
     
