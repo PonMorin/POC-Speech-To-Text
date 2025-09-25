@@ -1,43 +1,37 @@
-from dotenv import load_dotenv
-from config.GCP import load_credentials_base64
-
-load_dotenv()
-load_credentials_base64()
-
-from langgraph.graph import END, StateGraph
+from langgraph.graph import START, END, StateGraph
 from state import GraphState
-from node.rag_node import summarize_document
-from node.speech_to_text import batch_recognize_gcs
+from node.speech_to_text import batch_recognize_gcs, summarize_document
+from node.bucket import upload_doc_to_bucket
 
+from dotenv import load_dotenv
+from config.GCP import initialize_gcs_client
+load_dotenv()
+initialize_gcs_client()
 
-workflow = StateGraph(GraphState)
-
-
-workflow.add_node('SpeechToText', batch_recognize_gcs)
-workflow.add_node('SUMMARIZE', summarize_document)
-
-# Set the entry point and edges
-workflow.set_entry_point('SpeechToText')
-workflow.add_edge('SpeechToText', 'SUMMARIZE')
-workflow.add_edge('SUMMARIZE', END)
-
-# Compile the graph
-app = workflow.compile()
-
-# Create a visual of the graph
-# app.get_graph().draw_mermaid_png(output_file_path="graph.png")
 
 # --- Example of how to run the graph ---
 if __name__ == "__main__":
-    # Define the initial state (inputs for the first node)
+    
+    workflow = StateGraph(GraphState)
+    workflow.add_node('SPEECH TO TEXT', batch_recognize_gcs)
+    workflow.add_node('SUMMARIZE', summarize_document)
+    workflow.add_node('UPLOAD DOC', upload_doc_to_bucket)
+
+    # Set the entry point and edges
+    workflow.add_edge(START, 'SPEECH TO TEXT')
+    workflow.add_edge('SPEECH TO TEXT', 'SUMMARIZE')
+    workflow.add_edge('SUMMARIZE', 'UPLOAD DOC')
+    workflow.add_edge('UPLOAD DOC', END)
+
+    # Compile the graph
+    app = workflow.compile()
+
+    # Create a visual of the graph
+    # app.get_graph().draw_mermaid_png(output_file_path="graph.png")
+
     initial_state = {
         "audio_uri": "gs://cbm-cgs-acb-km-assets/km-video/standard_output.wav",
         "gcs_output_path": "gs://cbm-cgs-acb-km-assets/km-video/results/"
     }
     
-    print("Invoking graph...")
-    
     final_state = app.invoke(initial_state)
-    
-    print("\n--- Final Result ---")
-    print(final_state['result_summarize'])

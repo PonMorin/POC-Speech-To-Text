@@ -1,19 +1,25 @@
-# speech_to_text.py
-
 from dotenv import load_dotenv
 load_dotenv()
+
 from google.cloud import storage
 import json
 from google.cloud import speech_v2
-from google.cloud.speech_v2.types import cloud_speech
 from utils.const import OUTPUT_LANGS, SPEECH_TO_TEXT_MODEL, LOCATION
 from state import GraphState
 import os
+from langchain.chains.summarize import load_summarize_chain
+from langchain.prompts import PromptTemplate
+from langchain.schema import Document
+from langchain_google_vertexai import ChatVertexAI
+from utils.splitter import text_splitter
+from utils.const import CHUNK_SIZE, CHUNK_OVERLAP
 
-def batch_recognize_gcs(state: GraphState) -> dict:
+def batch_recognize_gcs(state: GraphState) -> GraphState:
     """
     Transcribes audio from a GCS URI and updates the state with the raw text.
     """
+    print("\n--- Speech To Text ---")
+    
     project_id = str(os.getenv("GOOGLE_CLOUD_PROJECT_ID"))
     recognizer_id = str(os.getenv("GOOGLE_CLOUD_RECOGNIZER_ID"))
     location = LOCATION
@@ -48,7 +54,6 @@ def batch_recognize_gcs(state: GraphState) -> dict:
     if result_metadata.error and result_metadata.error.code != 0:
         print("❌ Transcription failed. Full error details below:")
         print(result_metadata.error)
-        # You might want to raise an exception here to stop the graph
         raise ValueError(f"Transcription failed: {result_metadata.error.message}")
         
     output_json_uri = result_metadata.uri
@@ -74,10 +79,75 @@ def batch_recognize_gcs(state: GraphState) -> dict:
             
         print(f"✅ Successfully extracted transcript.")
         
-        # This is the correct way to return data to update the state
-        # print("Final Transcribed Text:", final_text)  # Debug print to verify the text
         return {"raw_text": final_text}
 
     except Exception as e:
         print(f"An error occurred while processing the result file: {e}")
         raise e
+    
+def summarize_document(state: GraphState) -> GraphState:
+    """
+    Summarize the content of a document using the language model.
+    """
+    print("\n--- Summarizing Text ---")
+    
+    raw_text = state["raw_text"]
+    if not raw_text:
+        print("No text to summarize.")
+        return {"result_summarize": "ไม่มีข้อความสำหรับสรุป"}
+
+    splitter = text_splitter(CHUNK_SIZE, CHUNK_OVERLAP)
+    
+    doc = Document(page_content=raw_text)
+    docs = splitter.split_documents([doc])
+
+    llm = ChatVertexAI(
+        model="gemini-2.5-flash",
+        temperature=0
+    )
+    
+    question_template = """
+    Act as a professional technical meeting minutes writer. 
+    Tone: formal
+    Format: Technical meeting summary
+    Tasks:
+    - output as **Thai language**
+    - highlight action items and owners
+    - highlight the agreements
+    - Use bullet points if needed
+    {text}
+    CONCISE SUMMARY IN THAI:
+    """
+    
+    question_prompt = PromptTemplate(template=question_template, input_variables=["text"])
+    
+    refine_template = """
+    Your job is to produce a final summary
+    We have provided an existing summary up to a certain point: {existing_answer}
+    We have the opportunity to refine the existing summary
+    (only if needed) with some more context below.
+    ------------
+    {text}
+    ------------
+    Given the new context, refine the original summary in Thai.
+    """
+    
+    refine_prompt = PromptTemplate(
+        template=refine_template,
+        input_variables=["existing_answer", "text"],
+    )
+    
+    chain = load_summarize_chain(
+        llm,
+        chain_type="refine",
+        return_intermediate_steps=False, # Set to False for cleaner output
+        question_prompt=question_prompt,
+        refine_prompt=refine_prompt,
+    )
+    
+    response = chain.invoke({"input_documents": docs})
+    
+    summary_text = response['output_text']
+    print("✅ Summarization complete.")
+    
+    return {"result_summarize": summary_text}

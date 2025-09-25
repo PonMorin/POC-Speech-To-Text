@@ -6,14 +6,13 @@ from langchain_community.document_loaders import PyPDFLoader, TextLoader, Unstru
 from langchain.schema import Document
 from typing import List, Tuple
 from langchain_google_vertexai import ChatVertexAI
-from langchain.chains.summarize import load_summarize_chain
-from langchain.prompts import PromptTemplate
 from langchain_core.prompts import ChatPromptTemplate
 from pythainlp.tokenize import word_tokenize
+from utils.const import CHUNK_SIZE, CHUNK_OVERLAP
 import os
-from state import GraphState
 from dotenv import load_dotenv
 load_dotenv()
+from utils.splitter import text_splitter
 
 def connect_pinecone(index_name:str):
     pc = Pinecone(
@@ -44,104 +43,14 @@ def load_document(tarPath):
                 documents.extend(loader.load())
     return documents
 
-def process_document(document:str, chunk_size:int, chunk_overlap:int) -> Tuple[List[Document], List[Document]]:
+def process_document(document:str) -> Tuple[List[Document], List[Document]]:
         """
         Process a document by splitting it into chunks and generating context for each chunk.
         """
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size= chunk_size, 
-            chunk_overlap= chunk_overlap,
-            length_function=lambda text: len(word_tokenize(text, engine='newmm')),
-            separators=[
-                "\n\n",
-                "\n",
-                " ",
-                ".",
-                ",",
-                "\u200b",  # Zero-width space
-                "\uff0c",  # Fullwidth comma
-                "\u3001",  # Ideographic comma
-                "\uff0e",  # Fullwidth full stop
-                "\u3002",  # Ideographic full stop
-                "",
-            ],
-        )
-        chunks = text_splitter.split_documents([document])
+        splitter = text_splitter(CHUNK_SIZE, CHUNK_OVERLAP)
+        chunks = splitter.split_documents([document])
         print(f"Split {len(chunks)} Chunks Successful.")
         return chunks
-
-def summarize_document(state: GraphState) -> dict:
-    """
-    Summarize the content of a document using the language model.
-    """
-    print("Summarizing text...")
-    
-    raw_text = state["raw_text"]
-    if not raw_text:
-        print("No text to summarize.")
-        return {"result_summarize": "ไม่มีข้อความสำหรับสรุป"}
-
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=450, 
-        chunk_overlap=150,
-        length_function=lambda text: len(word_tokenize(text, engine='newmm')),
-        separators=["\n\n", "\n", " ", ".", ","],
-    )
-    
-    doc = Document(page_content=raw_text)
-    docs = text_splitter.split_documents([doc])
-
-    llm = ChatVertexAI(
-        model="gemini-2.5-flash",
-        temperature=0
-    )
-    
-    question_template = """
-    Act as a professional technical meeting minutes writer. 
-    Tone: formal
-    Format: Technical meeting summary
-    Tasks:
-    - output as **Thai language**
-    - highlight action items and owners
-    - highlight the agreements
-    - Use bullet points if needed
-    {text}
-    CONCISE SUMMARY IN THAI:
-    """
-    
-    question_prompt = PromptTemplate(template=question_template, input_variables=["text"])
-    
-    refine_template = """
-    Your job is to produce a final summary
-    We have provided an existing summary up to a certain point: {existing_answer}
-    We have the opportunity to refine the existing summary
-    (only if needed) with some more context below.
-    ------------
-    {text}
-    ------------
-    Given the new context, refine the original summary in Thai.
-    """
-    
-    refine_prompt = PromptTemplate(
-        template=refine_template,
-        input_variables=["existing_answer", "text"],
-    )
-    
-    chain = load_summarize_chain(
-        llm,
-        chain_type="refine",
-        return_intermediate_steps=False, # Set to False for cleaner output
-        question_prompt=question_prompt,
-        refine_prompt=refine_prompt,
-    )
-    
-    response = chain.invoke({"input_documents": docs})
-    
-    summary_text = response['output_text']
-    print("✅ Summarization complete.")
-    
-    
-    return {"result_summarize": summary_text}
 
 def _generate_context(document:str, chunks: str) -> str:
     """
