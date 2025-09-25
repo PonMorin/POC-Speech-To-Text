@@ -54,10 +54,22 @@ def initialize_gcs_client():
     if _gcs_client is None:
         credentials = load_credentials_base64()
         _gcs_client = storage.Client(credentials=credentials)
-        print("\nGoogle Cloud Platform client initialized.\n")
+        print("Google Cloud Storage client initialized.")
     return _gcs_client
 
+def get_gcs_client():
+    if _gcs_client is None:
+        raise RuntimeError("GCS client not initialized. Call initialize_gcs_client() during app startup.")
+    return _gcs_client  
 
-# 🏁
-# -------- use "initialize_gcs_client()"" to initialize the GCS client --------
-# ✨
+def upload_to_gcs(bucket_name: str, file_obj, destination_blob_name: str):
+    client = get_gcs_client()
+    CHUNK_SIZE = 1024 * 1024 * 30
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(destination_blob_name, chunk_size=CHUNK_SIZE)
+
+    if blob.exists():
+        return None
+    
+    blob.upload_from_file(file_obj)
+    return blob.public_url

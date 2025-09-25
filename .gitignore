@@ -235,3 +235,5 @@ data
 data/*.wav
 data/.mov
 output/
+
+jae_test/
