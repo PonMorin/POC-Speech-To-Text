@@ -73,3 +73,53 @@ def upload_to_gcs(bucket_name: str, file_obj, destination_blob_name: str):
     
     blob.upload_from_file(file_obj)
     return blob.public_url
+
+def list_blobs_in_folder(bucket_name: str, folder_prefix: str) -> list[str]:
+
+    storage_client = storage.Client() 
+    blobs = storage_client.list_blobs(
+        bucket_name,
+        prefix=folder_prefix
+    ) 
+
+    file_names = [blob.name for blob in blobs]
+    
+    return file_names
+
+from google.cloud import storage
+
+def move_blob_in_same_bucket(bucket_name: str, source_blob_name: str, destination_folder: str) -> bool:
+
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    source_blob = bucket.blob(source_blob_name)
+    file_name = source_blob_name.split('/')[-1]
+    destination_blob_name = destination_folder + file_name
+
+    # ตรวจสอบว่าไฟล์ต้นฉบับมีอยู่จริง
+    if not source_blob.exists():
+        print(f"Error: Source file '{source_blob_name}' not found.")
+        return False
+        
+    # COPY
+    try:
+        bucket.copy_blob(
+            source_blob, 
+            bucket, 
+            new_name=destination_blob_name
+        )
+        print(f"Successfully copied '{source_blob_name}' to '{destination_blob_name}'.")
+
+    except Exception as e:
+        print(f"Error during copy: {e}")
+        return False
+
+    # DELETE
+    try:
+        source_blob.delete()
+        print(f"Successfully deleted original file '{source_blob_name}'.")
+        return True
+    
+    except Exception as e:
+        print(f"Warning: Copy successful, but failed to delete original file: {e}")
+        return False
