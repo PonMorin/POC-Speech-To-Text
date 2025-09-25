@@ -1,4 +1,3 @@
-import os
 from config.gcp import load_credentials_base64
 from dotenv import load_dotenv
 load_dotenv()
