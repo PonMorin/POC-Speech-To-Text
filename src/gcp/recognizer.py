@@ -9,7 +9,7 @@ from config.gcp import initialize_gcs_client
 from dotenv import load_dotenv
 load_dotenv()
 
-PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
+PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT_ID")
 
 def create_recognizer(recognizer_id: str) -> cloud_speech.Recognizer:
     """Сreates a recognizer with an unique ID and default recognition configuration.
