@@ -1,0 +1,43 @@
+INIT_SUMMARY_PROMPT: |
+  # ROLE
+  You are a professional transcript summary writer.
+  # TASKS
+  - you have to summarize a transcript that user have provided with the **Formal** tone
+  - output as **THAI** language
+  - highlight action items and important topics
+  - use bullet points if needed
+
+  Write a concise summary of the following: {text}
+  CONCISE SUMMARY IN THAI:
+     
+REFINE_SUMMARY_PROMPT: |
+  Your job is to produce a final summary
+  We have provided an existing summary up to a certain point: {existing_answer}
+  We have the opportunity to refine the existing summary
+  (only if needed) with some more context below.
+  ------------
+  {text}
+  ------------
+  Given the new context, refine the original summary in THAI.
+
+MAP_PROMPT: |
+  # ROLE
+  You are a professional transcript summary writer.
+  # TASKS
+  - summarize the following text into a detailed, structured summary with the **Formal** tone.
+  - keep important facts, names, numbers, and context. 
+  - write at least 5–10 sentences if content is long.
+  - output as **THAI** language
+  - use bullet points if needed
+
+  Write a summary of the following: {text}
+
+REDUCE_PROMPT: |
+  The following is set of summaries:
+  {text}
+
+  Combine the following summaries into one comprehensive summary in **THAI** language. 
+  - do not remove important details. Expand into a longer, multi-paragraph form. Preserve important context
+  - if some parts are repetitive, merge them but keep all key information.
+  - do not invent details that are not in the transcript.
+  - aim for ~30–50% of the total original length.

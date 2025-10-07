@@ -26,3 +26,9 @@ ffmpeg
 py-topping
 tiktoken
 pandas
+sumy
+
+# Evaluation
+evaluate
+rouge_score 
+absl-py
