@@ -1,25 +1,35 @@
-import time
+import os
+import json
 from dotenv import load_dotenv
 load_dotenv()
-from state import GraphState
+from state import SummaryState
 
-def upload_doc_to_bucket(state: GraphState) -> GraphState:
+def upload_doc_to_bucket(state: SummaryState) -> SummaryState:
     """Upload doc to bucket"""
     print("\033[92m--- Uploading doc to bucket ---\033[00m")
+    filename = state["filename"]
     
-    with open("raw.md", "w") as f:
+    out_dir = f"output/{filename}"
+    os.makedirs(out_dir, exist_ok=True)
+
+    # Save evaluation score
+    with open(f"{out_dir}/score.json", "w") as f:
+        json.dump(
+            {
+                "evaluation_score": state.get("eval_score", None),
+                "process_time_taken": state.get("time_taken", None)
+            },
+            f,
+            indent=2
+        )
+
+    # Save raw text
+    with open(f"{out_dir}/raw.md", "w") as f:
         f.write(state["raw_text"])
-        
-    with open("final.md", "w") as f:
-        f.write(state["result_summarize"])
-    
-    # Calculate time
-    start_time = state.get("time_taken", None)
-    if start_time:
-        elapsed_time = time.time() - start_time
-        print(f"\n\033[96m ===========> ⏱️ Speech To Text operation time taken: {elapsed_time/60:.2f} minutes <===========\n\033[00m")
-    else:
-        print("\nStart time not found")
+
+    # Save summary
+    with open(f"{out_dir}/summary.md", "w") as f:
+        f.write(state["summary"])
     
     return state
 

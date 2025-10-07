@@ -12,7 +12,7 @@ from utils.const import CHUNK_SIZE, CHUNK_OVERLAP
 import os
 from dotenv import load_dotenv
 load_dotenv()
-from utils.splitter import text_splitter
+from utils.text import text_splitter
 
 def connect_pinecone(index_name:str):
     pc = Pinecone(

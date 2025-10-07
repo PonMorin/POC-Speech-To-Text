@@ -1,22 +1,24 @@
+import os
 import time
 import asyncio
 from dotenv import load_dotenv
 load_dotenv()
-
 from google.cloud import storage
-import json
 from google.cloud import speech_v2
-from utils.const import OUTPUT_LANGS, SPEECH_TO_TEXT_MODEL, LOCATION
-from state import GraphState
-import os
-from langchain.chains.summarize import load_summarize_chain
-from langchain.prompts import PromptTemplate
+from state import SummaryState
 from langchain.schema import Document
-from langchain_google_vertexai import ChatVertexAI
-from utils.splitter import text_splitter
-from utils.const import CHUNK_SIZE, CHUNK_OVERLAP
+from utils.const import (
+    OUTPUT_LANGS, 
+    SPEECH_TO_TEXT_MODEL, 
+    LOCATION, 
+    CHUNK_SIZE, CHUNK_OVERLAP, 
+    MAX_LINE
+)
+from utils.text import text_splitter
+from utils.parser import parse_transcript
+from utils.summarizer import summarizer
 
-async def batch_recognize_gcs(state: GraphState) -> GraphState:
+async def batch_recognize_gcs(state: SummaryState) -> SummaryState:
     """
     Transcribes audio from a GCS URI and updates the state with the raw text.
     """
@@ -34,8 +36,13 @@ async def batch_recognize_gcs(state: GraphState) -> GraphState:
         auto_decoding_config=speech_v2.AutoDetectDecodingConfig(),
         language_codes=OUTPUT_LANGS,
         model=SPEECH_TO_TEXT_MODEL,
+        features=speech_v2.RecognitionFeatures(
+            enable_word_confidence=True,
+        ),
     )
-    file_metadata = speech_v2.BatchRecognizeFileMetadata(uri=state["audio_uri"])
+    uri: str = state["audio_uri"]
+    file_metadata = speech_v2.BatchRecognizeFileMetadata(uri=uri)
+    filename = os.path.basename(uri)
     output_config = speech_v2.GcsOutputConfig(uri=state["gcs_output_path"])
     recognition_output_config = speech_v2.RecognitionOutputConfig(gcs_output_config=output_config)
     
@@ -51,7 +58,7 @@ async def batch_recognize_gcs(state: GraphState) -> GraphState:
 
     while not operation.done():
         print("⏱️ Still processing... waiting 60s before next check...")
-        await asyncio.sleep(60)  # check every 60 seconds
+        await asyncio.sleep(60)
 
     response = operation.result()
     print("\033[93m✅ Transcription complete!\033[00m")
@@ -75,88 +82,67 @@ async def batch_recognize_gcs(state: GraphState) -> GraphState:
 
         print(f"Downloading result file: {blob_name}...")
         json_content_string = blob.download_as_text()
-        
-        data = json.loads(json_content_string)
-        
-        full_transcript = []
-        for result in data['results']:
-            if 'alternatives' in result and len(result['alternatives']) > 0:
-                full_transcript.append(result['alternatives'][0]['transcript'])
-        
-        final_text = "\n".join(full_transcript)
+        print(f"Successfully downloaded result")
+
+        # Parsing transcript
+        final_text, total_lines = parse_transcript(json_content_string, "plain")
             
         print(f"\033[93m✅ Successfully extracted transcript\033[00m")
         
         state["raw_text"] = final_text
+        state["total_lines"] = total_lines
+        state["filename"] = filename
         return state
 
     except Exception as e:
         print(f"An error occurred while processing the result file: {e}")
         raise e
     
-def summarize_document(state: GraphState) -> GraphState:
+def get_existing_raw(state: SummaryState) -> SummaryState:
+    """
+    Load existing raw text from state if available.
+    """
+    print("\033[92m--- Loading Existing Raw Text ---\033[00m")
+    
+    uri = state["audio_uri"]
+    filename = os.path.basename(uri)
+    
+    with open(f"output/{filename}/raw.md", "r", encoding="utf-8") as f:
+        final_text = f.read()
+        total_lines = len(final_text.splitlines())
+        state["raw_text"] = final_text
+        state["total_lines"] = total_lines
+        state["filename"] = filename
+        
+    return state
+    
+async def summarize_document(state: SummaryState) -> SummaryState:
     """
     Summarize the content of a document using the language model.
     """
     print("\033[92m--- Summarizing Text ---\033[00m")
-    
-    raw_text = state["raw_text"]
-    if not raw_text:
-        print("No text to summarize.")
-        return {"result_summarize": "ไม่มีข้อความสำหรับสรุป"}
 
-    splitter = text_splitter(CHUNK_SIZE, CHUNK_OVERLAP)
-    
-    doc = Document(page_content=raw_text)
-    docs = splitter.split_documents([doc])
+    docs = state["contents"]
+    total_lines = state["total_lines"]
 
-    llm = ChatVertexAI(
-        model="gemini-2.5-flash",
-        temperature=0
-    )
-    
-    question_template = """
-    Act as a professional technical meeting minutes writer. 
-    Tone: formal
-    Format: Technical meeting summary
-    Tasks:
-    - output as **Thai language**
-    - highlight action items and owners
-    - highlight the agreements
-    - Use bullet points if needed
-    {text}
-    CONCISE SUMMARY IN THAI:
-    """
-    
-    question_prompt = PromptTemplate(template=question_template, input_variables=["text"])
-    
-    refine_template = """
-    Your job is to produce a final summary
-    We have provided an existing summary up to a certain point: {existing_answer}
-    We have the opportunity to refine the existing summary
-    (only if needed) with some more context below.
-    ------------
-    {text}
-    ------------
-    Given the new context, refine the original summary in Thai.
-    """
-    
-    refine_prompt = PromptTemplate(
-        template=refine_template,
-        input_variables=["existing_answer", "text"],
-    )
-    
-    chain = load_summarize_chain(
-        llm,
-        chain_type="refine",
-        return_intermediate_steps=False, # Set to False for cleaner output
-        question_prompt=question_prompt,
-        refine_prompt=refine_prompt,
-    )
-    
-    response = chain.invoke({"input_documents": docs})
-    
-    summary_text = response['output_text']
-    print("\033[93m✅ Summarization complete\033[00m")
-    
-    return {"result_summarize": summary_text}
+    summary_text: str
+    if total_lines > MAX_LINE:
+        print(f"\033[93mMap Reduce Method is selected, total lines > {MAX_LINE}\033[00m")
+        summary_text = await summarizer(docs=docs, method="map_reduce")
+    else:
+        print(f"\033[93mRefine Method is selected, total lines < {MAX_LINE}\033[00m")
+        summary_text = await summarizer(docs=docs, method="refine")
+        
+    # Calculate time
+    elapsed_time: float = 0
+    start_time = state.get("time_taken", None)
+    if start_time:
+        elapsed_time = round((time.time() - start_time) / 60, 2)
+        # print(f"\n\033[96m ===========> ⏱️ Speech To Text operation time taken: {elapsed_time/60:.2f} minutes <===========\n\033[00m")
+    else:
+        print("\nStart time not found")
+
+    return {
+        "summary": summary_text,
+        "time_taken": elapsed_time
+    }
