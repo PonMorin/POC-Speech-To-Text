@@ -6,15 +6,12 @@ load_dotenv()
 from google.cloud import storage
 from google.cloud import speech_v2
 from state import SummaryState
-from langchain.schema import Document
 from utils.const import (
     OUTPUT_LANGS, 
     SPEECH_TO_TEXT_MODEL, 
     LOCATION, 
-    CHUNK_SIZE, CHUNK_OVERLAP, 
     MAX_LINE
 )
-from utils.text import text_splitter
 from utils.parser import parse_transcript
 from utils.summarizer import summarizer
 
@@ -22,7 +19,7 @@ async def batch_recognize_gcs(state: SummaryState) -> SummaryState:
     """
     Transcribes audio from a GCS URI and updates the state with the raw text.
     """
-    print("\033[92m--- Speech To Text ---\033[00m")
+    print("\n\033[92m--- Speech To Text ---\033[00m")
     state["time_taken"] = time.time()
     
     project_id = str(os.getenv("GOOGLE_CLOUD_PROJECT_ID"))
@@ -40,7 +37,10 @@ async def batch_recognize_gcs(state: SummaryState) -> SummaryState:
             enable_word_confidence=True,
         ),
     )
-    uri: str = state["audio_uri"]
+    
+    uri: str = state["input_uris"][state["index"]]
+    print(f"\033[93mStart processing {uri}\033[00m")
+    
     file_metadata = speech_v2.BatchRecognizeFileMetadata(uri=uri)
     filename = os.path.basename(uri)
     output_config = speech_v2.GcsOutputConfig(uri=state["gcs_output_path"])
@@ -62,9 +62,8 @@ async def batch_recognize_gcs(state: SummaryState) -> SummaryState:
 
     response = operation.result()
     print("\033[93m✅ Transcription complete!\033[00m")
-
     
-    result_metadata = response.results[state["audio_uri"]]
+    result_metadata = response.results[uri]
 
     if result_metadata.error and result_metadata.error.code != 0:
         print("❌ Transcription failed. Full error details below:")
@@ -92,6 +91,7 @@ async def batch_recognize_gcs(state: SummaryState) -> SummaryState:
         state["raw_text"] = final_text
         state["total_lines"] = total_lines
         state["filename"] = filename
+        state["index"] += 1
         return state
 
     except Exception as e:
@@ -104,7 +104,7 @@ def get_existing_raw(state: SummaryState) -> SummaryState:
     """
     print("\033[92m--- Loading Existing Raw Text ---\033[00m")
     
-    uri = state["audio_uri"]
+    uri: str = state["input_uris"][state["index"]]
     filename = os.path.basename(uri)
     
     with open(f"output/{filename}/raw.md", "r", encoding="utf-8") as f:

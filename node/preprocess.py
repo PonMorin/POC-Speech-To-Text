@@ -5,26 +5,6 @@ from langchain.schema import Document
 from utils.text import text_splitter
 from utils.const import CHUNK_SIZE, CHUNK_OVERLAP
 
-def chunk_document(state: SummaryState) -> SummaryState:
-    """
-    Chunk the document into smaller pieces for summarization.
-    """
-    print("\033[92m--- Chunking Documents ---\033[00m")
-    
-    raw_text = state["cleaned_text"]
-    if not raw_text:
-        print("No text to summarize.")
-        return {"summary": "ไม่มีข้อความสำหรับสรุป"}
-
-    splitter = text_splitter(CHUNK_SIZE, CHUNK_OVERLAP)
-    
-    doc = Document(page_content=raw_text)
-    docs = splitter.split_documents([doc])
-    
-    return {
-        "contents": docs
-    }
-
 def remove_stop_words(state: SummaryState) -> SummaryState:
     raw_text = state["raw_text"]
 
@@ -46,4 +26,21 @@ def remove_stop_words(state: SummaryState) -> SummaryState:
     
     return {
         "cleaned_text": cleaned_text
+    }
+    
+def chunk_document(state: SummaryState) -> SummaryState:
+    """
+    Chunk the document into smaller pieces for summarization.
+    """
+    print("\033[92m--- Chunking Documents ---\033[00m")
+    
+    raw_text = state["cleaned_text"]
+
+    splitter = text_splitter(CHUNK_SIZE, CHUNK_OVERLAP)
+    
+    doc = Document(page_content=raw_text)
+    docs = splitter.split_documents([doc])
+    
+    return {
+        "contents": docs
     }
