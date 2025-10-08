@@ -6,6 +6,7 @@ from utils.text import text_splitter
 from utils.const import CHUNK_SIZE, CHUNK_OVERLAP
 
 def remove_stop_words(state: SummaryState) -> SummaryState:
+    print("\033[92m--- Removing stop words ---\033[00m")
     raw_text = state["raw_text"]
 
     # 1. Tokenize

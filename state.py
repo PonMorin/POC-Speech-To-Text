@@ -12,6 +12,11 @@ class SummaryState(TypedDict):
     eval_score: float
     time_taken: float
     index: int
+    
+class EtlState(TypedDict):
+    input_files: List[str]
+    output_file: str
+    
 
 # class RefineState(TypedDict):
 #     raw_text: str

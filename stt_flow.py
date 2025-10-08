@@ -4,7 +4,7 @@ load_dotenv()
 from langgraph.graph import START, END, StateGraph
 from state import SummaryState
 from node.speech_to_text import batch_recognize_gcs, summarize_document, get_existing_raw
-from node.bucket import upload_doc_to_bucket
+from node.uploader import upload_doc_to_bucket
 from node.preprocess import remove_stop_words, chunk_document
 from node.eval import similarity
 from config.GCP import initialize_gcs_client
@@ -54,7 +54,7 @@ async def main():
     app = workflow.compile()
 
     # Create a visual of the graph
-    app.get_graph().draw_mermaid_png(output_file_path="assets/graph.png")
+    app.get_graph().draw_mermaid_png(output_file_path="assets/summary_graph.png")
 
     initial_state = {
         "index": 0,

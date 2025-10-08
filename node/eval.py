@@ -25,6 +25,7 @@ def similarity(state: SummaryState) -> SummaryState:
     """
     Evaluate source text with summary
     """
+    print("\033[92m--- Evaluating Summary ---\033[00m")
     embeddings = GoogleGenerativeAIEmbeddings(model=EMBEDDING_MODEL)
 
     # Extract inputs
