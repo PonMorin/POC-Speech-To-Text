@@ -29,7 +29,7 @@ def upload_to_gcs(client, bucket_name: str, file_obj, destination_blob_name: str
         blob.upload_from_file(f)
     return blob.public_url
 
-def list_blobs_in_folder(bucket_name: str, folder_prefix: str) -> list[str]:
+def list_blobs_in_folder(bucket_name: str, folder_prefix: str, file_type: str) -> list[str]:
 
     storage_client = storage.Client() 
     blobs = storage_client.list_blobs(
@@ -40,7 +40,7 @@ def list_blobs_in_folder(bucket_name: str, folder_prefix: str) -> list[str]:
     files: List[str] = []
     for blob in blobs:
         blob_name: str = blob.name
-        if blob_name.endswith(".mov"):
+        if blob_name.endswith(file_type):
             full_path = f"gs://{bucket_name}/{blob_name}"
             files.append(full_path)
     

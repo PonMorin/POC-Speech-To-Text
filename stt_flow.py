@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 load_dotenv()
 from langgraph.graph import START, END, StateGraph
 from state import SummaryState
+from node.lister import list_blobs_in_bucket
 from node.speech_to_text import batch_recognize_gcs, summarize_document, get_existing_raw
 from node.uploader import upload_doc_to_bucket
 from node.preprocess import remove_stop_words, chunk_document
@@ -13,6 +14,7 @@ from edge.summary import should_continue, is_empty
 async def main():
     # Nodes
     workflow = StateGraph(SummaryState)
+    workflow.add_node("SETUP AUDIO LIST", list_blobs_in_bucket)
     workflow.add_node("SPEECH TO TEXT", batch_recognize_gcs)
     # workflow.add_node("GET RAW TEXT", get_existing_raw)
     workflow.add_node("PREPROCESSING", remove_stop_words)
@@ -22,7 +24,8 @@ async def main():
     workflow.add_node("UPLOADING DOC", upload_doc_to_bucket)
 
     # Edges
-    workflow.add_edge(START, "SPEECH TO TEXT")
+    workflow.add_edge(START, "SETUP AUDIO LIST")
+    workflow.add_edge("SETUP AUDIO LIST", "SPEECH TO TEXT")
     # workflow.add_edge("SPEECH TO TEXT", "PREPROCESSING")
     workflow.add_edge("PREPROCESSING", "CHUNKING TEXT")
     workflow.add_edge("CHUNKING TEXT", "SUMMARIZING")
@@ -56,19 +59,20 @@ async def main():
     # Create a visual of the graph
     app.get_graph().draw_mermaid_png(output_file_path="assets/summary_graph.png")
 
+    client = initialize_gcs_client()
     initial_state = {
+        "gcs_client": client,
         "index": 0,
-        "input_uris": [
-            "gs://cbm-cgs-acb-km-assets/km-video/standard_output.wav",
-            "gs://cbm-cgs-acb-km-assets/km-video/test_movefile/Day2.wav",
-            "gs://cbm-cgs-acb-km-assets/km-video/อบรม Burner Design & Operation (TP Training_วชช.ผลิต)-20241028_083859-Meeting Recording.wav"
-        ],
-        "gcs_output_path": "gs://cbm-cgs-acb-km-assets/km-video/results/"
+        # "input_uris": [
+        #     "gs://cbm-cgs-acb-km-assets/km-video/standard_output.wav",
+        #     # "gs://cbm-cgs-acb-km-assets/km-video/test_movefile/Day2.wav",
+        #     # "gs://cbm-cgs-acb-km-assets/km-video/อบรม Burner Design & Operation (TP Training_วชช.ผลิต)-20241028_083859-Meeting Recording.wav"
+        # ],
+        # "gcs_output_path": "gs://cbm-cgs-acb-km-assets/km-video/results/"
     }
     
     _ = await app.ainvoke(initial_state)
     print("\n\033[94mProcess is done!\033[00m")
 
 if __name__ == "__main__":
-    initialize_gcs_client()
     asyncio.run(main())

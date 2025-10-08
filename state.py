@@ -1,5 +1,7 @@
 from typing import TypedDict, List
+from google.cloud.storage.client import Client
 class SummaryState(TypedDict):
+    gcs_client: Client
     filename: str
     input_uris: List[str]
     audio_uri: str

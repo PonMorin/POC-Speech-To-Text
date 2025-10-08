@@ -7,7 +7,7 @@ from state import SummaryState
 def upload_doc_to_bucket(state: SummaryState) -> SummaryState:
     """Upload doc to bucket"""
     print("\033[92m--- Uploading doc to bucket ---\033[00m")
-    filename = state["filename"]
+    filename = state["filename"].split('.')[0]
     
     out_dir = f"output/{filename}"
     os.makedirs(out_dir, exist_ok=True)
@@ -30,6 +30,17 @@ def upload_doc_to_bucket(state: SummaryState) -> SummaryState:
     # Save summary
     with open(f"{out_dir}/summary.md", "w") as f:
         f.write(state["summary"])
+        
+    from gcp.bucket import upload_to_gcs
+    
+    bucket_name = os.getenv("BUCKET_NAME")
+    output_folder_prefix = os.getenv("OUTPUT_FOLDER_PREFIX")
+
+    _ = upload_to_gcs(
+        client=state["gcs_client"], 
+        bucket_name=bucket_name, 
+        file_obj=f"output/{filename}/summary.md", 
+        destination_blob_name=f"{output_folder_prefix}/{filename}.md")
     
     return state
 
