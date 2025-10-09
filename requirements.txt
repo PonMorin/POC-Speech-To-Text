@@ -7,6 +7,7 @@ langchain-google-community[speech]
 langchain-google-genai
 langchain_pinecone
 langfuse==2.60.8
+pyppeteer
 
 # Vector DB
 pinecone

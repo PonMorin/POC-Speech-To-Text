@@ -2,6 +2,7 @@ import asyncio
 from dotenv import load_dotenv
 load_dotenv()
 from langgraph.graph import START, END, StateGraph
+from langchain_core.runnables.graph import MermaidDrawMethod
 from state import SummaryState
 from node.lister import list_blobs_in_bucket
 from node.speech_to_text import batch_recognize_gcs, summarize_document, get_existing_raw
@@ -39,8 +40,8 @@ async def main():
     is_empty,
         {
             "NOT EMPTY": "PREPROCESSING",
-            "EMPTY" : "SPEECH TO TEXT",
-            "NO LEFTOVERS": END
+            "HAVE LEFTOVERS": "SPEECH TO TEXT",
+            END: END
         }
     )
     # Check is there available input uris
@@ -49,7 +50,7 @@ async def main():
     should_continue,
         {
             "HAVE LEFTOVERS": "SPEECH TO TEXT",
-            "NO LEFTOVERS" : END,
+            END : END,
         }
     )
     
@@ -57,18 +58,12 @@ async def main():
     app = workflow.compile()
 
     # Create a visual of the graph
-    app.get_graph().draw_mermaid_png(output_file_path="assets/summary_graph.png")
+    # app.get_graph().draw_mermaid_png(output_file_path="assets/summary_graph.png")
 
     client = initialize_gcs_client()
     initial_state = {
         "gcs_client": client,
         "index": 0,
-        # "input_uris": [
-        #     "gs://cbm-cgs-acb-km-assets/km-video/standard_output.wav",
-        #     # "gs://cbm-cgs-acb-km-assets/km-video/test_movefile/Day2.wav",
-        #     # "gs://cbm-cgs-acb-km-assets/km-video/อบรม Burner Design & Operation (TP Training_วชช.ผลิต)-20241028_083859-Meeting Recording.wav"
-        # ],
-        # "gcs_output_path": "gs://cbm-cgs-acb-km-assets/km-video/results/"
     }
     
     _ = await app.ainvoke(initial_state)
