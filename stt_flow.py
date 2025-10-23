@@ -66,7 +66,7 @@ async def main():
         "index": 0,
     }
     
-    _ = await app.ainvoke(initial_state)
+    _ = await app.ainvoke(initial_state, {"recursion_limit": 100})
     print("\n\033[94mProcess is done!\033[00m")
 
 if __name__ == "__main__":
