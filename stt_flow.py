@@ -2,10 +2,9 @@ import asyncio
 from dotenv import load_dotenv
 load_dotenv()
 from langgraph.graph import START, END, StateGraph
-from langchain_core.runnables.graph import MermaidDrawMethod
 from state import SummaryState
 from node.lister import list_blobs_in_bucket
-from node.speech_to_text import batch_recognize_gcs, summarize_document, get_existing_raw
+from node.speech_to_text import batch_recognize_gcs, summarize_document
 from node.uploader import upload_doc_to_bucket
 from node.preprocess import remove_stop_words, chunk_document
 from node.eval import similarity
@@ -17,7 +16,6 @@ async def main():
     workflow = StateGraph(SummaryState)
     workflow.add_node("SETUP AUDIO LIST", list_blobs_in_bucket)
     workflow.add_node("SPEECH TO TEXT", batch_recognize_gcs)
-    # workflow.add_node("GET RAW TEXT", get_existing_raw)
     workflow.add_node("PREPROCESSING", remove_stop_words)
     workflow.add_node("CHUNKING TEXT", chunk_document)
     workflow.add_node("SUMMARIZING", summarize_document)
@@ -27,7 +25,6 @@ async def main():
     # Edges
     workflow.add_edge(START, "SETUP AUDIO LIST")
     workflow.add_edge("SETUP AUDIO LIST", "SPEECH TO TEXT")
-    # workflow.add_edge("SPEECH TO TEXT", "PREPROCESSING")
     workflow.add_edge("PREPROCESSING", "CHUNKING TEXT")
     workflow.add_edge("CHUNKING TEXT", "SUMMARIZING")
     workflow.add_edge("SUMMARIZING", "EVALUATING")

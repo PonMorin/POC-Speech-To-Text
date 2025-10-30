@@ -5,6 +5,7 @@ from google.cloud import storage
 # import json
 from dotenv import load_dotenv
 # import base64
+import asyncio
 
 load_dotenv()
 
@@ -28,6 +29,38 @@ def upload_to_gcs(client, bucket_name: str, file_obj, destination_blob_name: str
     with open(file_obj, "rb") as f:
         blob.upload_from_file(f)
     return blob.public_url
+
+async def upload_to_gcs_async(bucket_name: str, file_obj, destination_blob_name: str) -> str | None:
+    """
+    Asynchronously uploads a file object to Google Cloud Storage.
+
+    Args:
+        bucket_name (str): Target GCS bucket name.
+        file_obj: A file-like object (e.g. open() or BytesIO()).
+        destination_blob_name (str): Destination path inside the bucket.
+
+    Returns:
+        str | None: Public URL if uploaded, or None if already exists.
+    """
+    client = get_gcs_client()
+    CHUNK_SIZE = 1024 * 1024 * 30  # 30 MB
+
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(destination_blob_name, chunk_size=CHUNK_SIZE)
+
+    async def blob_exists():
+        return await asyncio.to_thread(blob.exists)
+
+    async def blob_upload():
+        await asyncio.to_thread(blob.upload_from_file, file_obj)
+        return blob.public_url
+
+    # Run blocking calls in background threads
+    if await blob_exists():
+        return None
+
+    public_url = await blob_upload()
+    return public_url
 
 def list_blobs_in_folder(bucket_name: str, folder_prefix: str, file_type: str) -> list[str]:
 
