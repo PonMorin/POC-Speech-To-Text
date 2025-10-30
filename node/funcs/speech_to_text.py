@@ -55,8 +55,8 @@ async def batch_recognize_gcs(uri: str, gcs_output_path: str):
     print("Batch transcription started. Polling for completion...")
 
     while not operation.done():
-        print("⏱️ Still processing... waiting 10s before next check...")
-        await asyncio.sleep(10)
+        print("⏱️ Still processing... waiting 7s before next check...")
+        await asyncio.sleep(7)
 
     response = operation.result()
     print("\033[93m✅ Transcription complete!\033[00m")

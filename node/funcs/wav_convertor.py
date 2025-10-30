@@ -22,7 +22,9 @@ def convert_to_wav_specific(input_files: list[str], output_path: str):
     if input_files:
         for file in input_files:
             input_file: str = "data/" +  file
-            output_file: str = output_path + f"/{file.split(".")[0]}.wav"
+            filename = os.path.basename(input_file)
+            absolute_filename = os.path.splitext(filename)[0]
+            output_file: str = output_path + f"/{absolute_filename}.wav"
             
             if os.path.isdir(input_file):
                 continue

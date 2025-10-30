@@ -32,10 +32,9 @@ def upload_wav_to_bucket(file_obj: str, gcs_client):
     """Upload doc to bucket"""
     filename = os.path.basename(file_obj)
     absolute_filename = os.path.splitext(filename)[0]
-    
-    print(f"\033[92m--- Uploading {absolute_filename} to bucket ---\033[00m")
-
     output_wav_prefix = os.getenv("OUTPUT_WAV_PREFIX")
+    
+    print(f"\033[92m--- Uploading {absolute_filename} to bucket ({output_wav_prefix}) ---\033[00m")
 
     _ = upload_to_gcs(
         client=gcs_client, 
