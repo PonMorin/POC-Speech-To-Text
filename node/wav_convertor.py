@@ -24,7 +24,9 @@ def convert_to_wav_specific(state: EtlState) -> EtlState:
     if input_files:
         for file in input_files:
             input_file: str = "data/" +  file
-            output_file: str = state["output_file"] + f"/{file.split(".")[0]}.wav"
+            filename = os.path.basename(file)
+            absolute_filename = os.path.splitext(filename)[0]
+            output_file: str = state["output_file"] + f"/{absolute_filename}.wav"
             
             if os.path.isdir(input_file):
                 continue
