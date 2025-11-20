@@ -72,51 +72,10 @@ async def main(video_folders: list[str], output_folders: list[str]):
     
 if __name__ == "__main__":
     video_folders: list[str] = [
-        # "bronze/videos/inputs/วิชาชีพซ่อม/Training TP MRO 30 มิย - 4 กค 2568/Gear",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/Training TP MRO 30 มิย - 4 กค 2568/Grate",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/Training TP MRO 30 มิย - 4 กค 2568/Interlocking",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/Training TP MRO 30 มิย - 4 กค 2568/Kiln",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/Training TP MRO 30 มิย - 4 กค 2568/Large Fan",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/Training TP MRO 30 มิย - 4 กค 2568/MV & LV Motor",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/Training TP MRO 30 มิย - 4 กค 2568/Power Disthibution",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/Training TP MRO 30 มิย - 4 กค 2568/Vertical Roller mill"
-        
-        # "bronze/videos/inputs/วิชาชีพซ่อม/หลักสูตร Pan Conveyor @ Box Conveyor",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/การตรวจสอบแบบไม่ทำลาย PT MT",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/อบรม Basic Alignment",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/อบรม Basic Alignment คลิปดิบ",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/อบรม Basic Hand Tool EE",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/อบรม Basic Hand Tool ME",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/อบรม Lubrication",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/อบรม Process Control EE 05022025",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/อบรม การก่ออิฐ เทคาสท์",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/อบรม การเลือกใช้วัสดุในอุตสาหกรรมซีเมนต์ (โลหะวิทยา)",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/อบรม โลหะวิทยา",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/อบรมงานก่ออิฐ",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/อบรมงานเขียนแบบ",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/อบรมหลักสูตร Chain Bucket Elevator",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/อบรมหลักสูตร Motor (LV and MV )",
-        # "bronze/videos/inputs/วิชาชีพซ่อม/อบรมหลักสูตร Screw Conveyor"
-        
-        # "bronze/videos/inputs/วิชาชีพส่งเสริม/QCX Calculations for Cement Quality Control"
-        # "bronze/videos/inputs/วิชาชีพส่งเสริม/Raw Material Proportioning ( RMD )",
-        # "bronze/videos/inputs/วิชาชีพส่งเสริม/Standard & Chemeistry of Cement (Spec control)",
-        # "bronze/videos/inputs/วิชาชีพส่งเสริม/หลักสูตร Generative AI and Effective Prompting",
-        # "bronze/videos/inputs/วิชาชีพส่งเสริม/อบรมงาน QA"
-        # "bronze/videos/inputs/วิชาชีพส่งเสริม/อบรมหลักสูตร Advance analysis equipment (การทบทวนวิธีวิเคราะห์ตัวอย่างด้วยเครื่อง XRD และ XRF)"
-        
-        # "bronze/videos/inputs/วิชาชีพผลิต/Cooler Design & Operation (TP Training วิชาชีพผลิต"
-        # "bronze/videos/inputs/วิชาชีพผลิต/Grinding Technical Training & Consulting"
-        # "bronze/videos/inputs/วิชาชีพผลิต/Refractory"
-        # "bronze/videos/inputs/วิชาชีพผลิต/Suzuki Sensei/training กับอาจารย์ Suzuki หัวข้อ Pyro section",
-        # "bronze/videos/inputs/วิชาชีพผลิต/อบรม Belt conveyor & Feeder",
-        # "bronze/videos/inputs/วิชาชีพผลิต/อบรม Cooler Design",
-        # "bronze/videos/inputs/วิชาชีพผลิต/อบรม Heat Balance",
-        # "bronze/videos/inputs/วิชาชีพผลิต/อบรม Raw Mill Grinding",
-        # "bronze/videos/inputs/วิชาชีพผลิต/อบรม Ring Formation",
-        # "bronze/videos/inputs/วิชาชีพผลิต/อบรม WHG Calculation Performance Test Part"
-        # "bronze/videos/inputs/วิชาชีพผลิต/อบรม Why Why Analysis for Engineer"
-        # "bronze/videos/inputs/วิชาชีพผลิต/อบรม การวัดและคำนวณลมในกระบวนการผลิตปูนซีเมนต์"
+        "bronze/videos/inputs/Green Industrial/MEE (โรงไฟฟ้า)/3.Learning Course/หลักสูตร KM & Problem Solving for Chronic problem",
+        "bronze/videos/inputs/Green Industrial/MEE (โรงไฟฟ้า)/3.Learning Course/หลักสูตร Operator Furnace, Waste และการเผาไหม้ที่เหมาะสม",
+        "bronze/videos/inputs/Green Industrial/MEE (โรงไฟฟ้า)/3.Learning Course/หลักสูตร Turbine & Boiler Control",
+        "bronze/videos/inputs/Green Industrial/MEE (โรงไฟฟ้า)/3.Learning Course/หลักสูตร Waste ที่ยังไม่สามารถรับได้"
     ]
     output_folders = [p.replace("bronze/videos/inputs/", "silver/videos/outputs/") for p in video_folders]
     
